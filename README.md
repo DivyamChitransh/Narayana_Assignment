@@ -1,61 +1,81 @@
-# Orders Backend (Bun + Elysia + SQLite)
+# TH-FS-001 Restaurant Orders System
 
-This backend provides:
-- SQLite migration for normalizing messy `orders` data
-- Zod-validated CRUD REST API
-- Cursor-based pagination (`items`, `nextCursor`, `hasMore`)
+This project contains:
+- `backend/`: Bun + Elysia + SQLite API
+- `frontend/`: TanStack Start + React + TanStack Table UI
+- `database/orders.db`: SQLite database
 
-## Requirements
+The implementation includes:
+- Normalization migration from messy legacy orders data
+- CRUD API with Zod validation
+- Cursor-based pagination (no offset pagination)
+- Frontend orders table with load-more cursor pagination
 
-- Bun
+## Project Structure
 
-## Setup
+```text
+th-task-01-main/
+  backend/
+    migrations/
+    scripts/
+    src/
+  frontend/
+    src/
+  database/
+    orders.db
+  INSTRUCTIONS.md
+```
 
-Run from `backend/`:
+## Prerequisites
+
+- Bun installed
+
+## 1) Backend Setup
 
 ```bash
+cd backend
 bun install
 ```
 
-## Database flow
-
-Create messy source data:
+Seed messy source data:
 
 ```bash
 bun run db:seed
 ```
 
-Run normalization migration:
+Run migration:
 
 ```bash
 bun run db:migrate
 ```
 
-If you want a fresh reset:
-
-```bash
-rm -f ../database/orders.db
-bun run db:seed
-bun run db:migrate
-```
-
-## Run API
+Start backend server:
 
 ```bash
 bun run dev
 ```
 
-Server runs on `http://localhost:3001`.
+Backend runs on `http://localhost:3001`.
 
-## Key endpoints
+## 2) Frontend Setup
 
-- `GET /orders?limit=20&cursor=<token>` (cursor pagination only)
-- `GET /orders/:id`
-- `POST /orders`
-- `PUT /orders/:id`
-- `DELETE /orders/:id`
+Open a new terminal:
 
-List response shape:
+```bash
+cd frontend
+bun install
+bun dev
+```
+
+Frontend runs on `http://localhost:3000`.
+
+## API (Cursor Pagination)
+
+Primary list endpoint:
+
+`GET /orders?limit=20&cursor=<token>`
+
+Response format:
 
 ```json
 {
@@ -63,4 +83,28 @@ List response shape:
   "nextCursor": "string-or-null",
   "hasMore": true
 }
+```
+
+Other endpoints:
+- `GET /orders/:id`
+- `POST /orders`
+- `PUT /orders/:id`
+- `DELETE /orders/:id`
+
+## Quick Verification
+
+1. Run backend and frontend.
+2. Open `http://localhost:3000`.
+3. Confirm orders table loads.
+4. Click `Load more` and verify row count increases.
+5. Confirm loading stops when `hasMore` is false.
+
+## Fresh Reset (optional)
+
+From `backend/`:
+
+```bash
+rm -f ../database/orders.db
+bun run db:seed
+bun run db:migrate
 ```
