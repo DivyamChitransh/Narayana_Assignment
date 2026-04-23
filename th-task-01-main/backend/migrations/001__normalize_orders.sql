@@ -89,8 +89,8 @@ SELECT
   price AS raw_price,
   food_items AS raw_food_items,
   CASE
-    WHEN metadata LIKE '{%' OR metadata LIKE '[%' THEN metadata
-    WHEN metadata LIKE '"{%' OR metadata LIKE '"[%' THEN json_extract(metadata, '$')
+    WHEN (metadata LIKE '{%' OR metadata LIKE '[%') AND json_valid(metadata) THEN metadata
+    WHEN (metadata LIKE '"{%' OR metadata LIKE '"[%') AND json_valid(metadata) THEN json_extract(metadata, '$')
     ELSE NULL
   END AS metadata_json,
   CASE
@@ -103,38 +103,12 @@ FROM orders_legacy;
 INSERT INTO order_items (order_id, item_text, position)
 SELECT
   o.id,
-  v.value,
-  CAST(v.key AS INTEGER)
+  TRIM(l.food_items) AS item_text,
+  0 AS position
 FROM orders o
 JOIN orders_legacy l ON TRIM(l.order_id) = o.legacy_order_id
-JOIN json_each(
-  CASE
-    WHEN l.food_items IS NULL OR TRIM(l.food_items) = '' THEN '[]'
-    WHEN l.food_items LIKE '[%' THEN l.food_items
-    ELSE (
-      '["' ||
-      replace(
-        replace(
-          replace(
-            replace(
-              replace(TRIM(l.food_items), char(13), '|'),
-              char(10),
-              '|'
-            ),
-            ';',
-            '|'
-          ),
-          ',',
-          '|'
-        ),
-        '|',
-        '","'
-      ) ||
-      '"]'
-    )
-  END
-) AS v
-WHERE NULLIF(TRIM(CAST(v.value AS TEXT)), '') IS NOT NULL;
+WHERE l.food_items IS NOT NULL
+  AND NULLIF(TRIM(l.food_items), '') IS NOT NULL;
 
 CREATE INDEX idx_orders_legacy_order_id ON orders(legacy_order_id);
 CREATE INDEX idx_order_items_order_id_position ON order_items(order_id, position);

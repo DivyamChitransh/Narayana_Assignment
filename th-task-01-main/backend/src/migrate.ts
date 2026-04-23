@@ -36,10 +36,38 @@ function getApplied(db: Database): MigrationRow[] {
 }
 
 function splitStatements(sql: string): string[] {
-  return sql
-    .split(";")
-    .map((s) => s.trim())
-    .filter(Boolean);
+  const statements: string[] = [];
+  let current = "";
+  let inSingleQuote = false;
+
+  for (let i = 0; i < sql.length; i++) {
+    const ch = sql[i];
+    const next = i + 1 < sql.length ? sql[i + 1] : "";
+
+    if (ch === "'") {
+      current += ch;
+      if (inSingleQuote && next === "'") {
+        current += next;
+        i++;
+      } else {
+        inSingleQuote = !inSingleQuote;
+      }
+      continue;
+    }
+
+    if (ch === ";" && !inSingleQuote) {
+      const stmt = current.trim();
+      if (stmt) statements.push(stmt);
+      current = "";
+      continue;
+    }
+
+    current += ch;
+  }
+
+  const tail = current.trim();
+  if (tail) statements.push(tail);
+  return statements;
 }
 
 function applyOne(db: Database, filename: string) {
